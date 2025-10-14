@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Campaign Testing Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📧 Email Campaign Testing Dashboard</h1>
+            <p class="subtitle">Professional email template validation for marketing teams</p>
+        </header>
+
+        <div class="upload-section">
+            <div class="upload-card">
+                <h2>Upload Email Template</h2>
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="emailTemplate" name="email_template" accept=".html" required>
+                        <label for="emailTemplate" class="file-label">
+                            <span class="file-icon">📄</span>
+                            <span class="file-text">Choose HTML file or drag and drop</span>
+                        </label>
+                    </div>
+
+                    <div class="options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="takeScreenshots" name="take_screenshots" value="true">
+                            <span>Generate client preview screenshots (Gmail, Outlook, Mobile)</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn-primary" id="uploadBtn">
+                        <span class="btn-text">Run Tests</span>
+                        <span class="loader" style="display: none;"></span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div id="resultsSection" class="results-section" style="display: none;">
+            <h2>Test Results</h2>
+            <div id="resultsContent" class="results-content"></div>
+        </div>
+
+        <div class="reports-section">
+            <div class="reports-header">
+                <h2>Recent Test Reports</h2>
+                <button class="btn-secondary" onclick="loadReports()">🔄 Refresh</button>
+            </div>
+            <div id="reportsList" class="reports-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const uploadForm = document.getElementById('uploadForm');
+        const resultsSection = document.getElementById('resultsSection');
+        const resultsContent = document.getElementById('resultsContent');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const fileInput = document.getElementById('emailTemplate');
+        const fileLabel = document.querySelector('.file-label .file-text');
+
+        // File input change handler
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                fileLabel.textContent = e.target.files[0].name;
+            }
+        });
+
+        // Drag and drop
+        const fileInputWrapper = document.querySelector('.file-input-wrapper');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            fileInputWrapper.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            fileInputWrapper.addEventListener(eventName, () => {
+                fileInputWrapper.classList.add('drag-over');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            fileInputWrapper.addEventListener(eventName, () => {
+                fileInputWrapper.classList.remove('drag-over');
+            });
+        });
+
+        fileInputWrapper.addEventListener('drop', function(e) {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                fileLabel.textContent = files[0].name;
+            }
+        });
+
+        // Form submission
+        uploadForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData();
+            formData.append('email_template', fileInput.files[0]);
+
+            if (document.getElementById('takeScreenshots').checked) {
+                formData.append('take_screenshots', 'true');
+            }
+
+            uploadBtn.disabled = true;
+            uploadBtn.querySelector('.btn-text').textContent = 'Processing...';
+            uploadBtn.querySelector('.loader').style.display = 'inline-block';
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResults(data.results);
+                    loadReports();
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Error uploading file: ' + error.message);
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.querySelector('.btn-text').textContent = 'Run Tests';
+                uploadBtn.querySelector('.loader').style.display = 'none';
+            }
+        });
+
+        function displayResults(results) {
+            resultsSection.style.display = 'block';
+
+            let html = '<div class="results-grid">';
+
+            // HTML Validation
+            html += createResultCard(
+                'HTML Validation',
+                results.html_valid,
+                results.html_valid ? 'Valid HTML5 structure' : results.html_errors || 'Invalid HTML detected'
+            );
+
+            // Alt Tags
+            html += createResultCard(
+                'Image Alt Tags',
+                results.alt_tags_present,
+                results.alt_tags_present
+                    ? `All ${results.total_images} images have alt tags`
+                    : `${results.missing_alt_count} of ${results.total_images} images missing alt tags`
+            );
+
+            // Inline CSS
+            html += createResultCard(
+                'Inline CSS',
+                results.inline_css_present,
+                results.inline_css_present
+                    ? `${results.inline_css_count} elements with inline styles`
+                    : 'No inline CSS detected - may not render properly'
+            );
+
+            // Responsive Design
+            html += createResultCard(
+                'Responsive Design',
+                results.media_queries_present,
+                results.media_queries_present
+                    ? `${results.media_query_count} media queries found`
+                    : 'No media queries detected'
+            );
+
+            html += '</div>';
+
+            // Screenshots
+            if (results.screenshots && results.screenshots.length > 0) {
+                html += '<div class="screenshots-section">';
+                html += '<h3>Preview Screenshots</h3>';
+                html += '<div class="screenshots-grid">';
+                results.screenshots.forEach(screenshot => {
+                    html += `
+                        <div class="screenshot-card">
+                            <img src="${screenshot.path}" alt="${screenshot.name}">
+                            <p>${screenshot.name}</p>
+                        </div>
+                    `;
+                });
+                html += '</div></div>';
+            }
+
+            resultsContent.innerHTML = html;
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function createResultCard(title, passed, message) {
+            const status = passed ? 'pass' : 'fail';
+            const icon = passed ? '✓' : '✗';
+
+            return `
+                <div class="result-card ${status}">
+                    <div class="result-icon">${icon}</div>
+                    <div class="result-content">
+                        <h3>${title}</h3>
+                        <p>${message}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function loadReports() {
+            try {
+                const response = await fetch('/reports');
+                const reports = await response.json();
+
+                const reportsList = document.getElementById('reportsList');
+
+                if (reports.length === 0) {
+                    reportsList.innerHTML = '<p class="no-reports">No reports available yet</p>';
+                    return;
+                }
+
+                let html = '<div class="reports-grid">';
+                reports.slice(0, 10).forEach(report => {
+                    const timestamp = new Date(
+                        report.timestamp.substring(0, 4),
+                        report.timestamp.substring(4, 6) - 1,
+                        report.timestamp.substring(6, 8),
+                        report.timestamp.substring(9, 11),
+                        report.timestamp.substring(11, 13),
+                        report.timestamp.substring(13, 15)
+                    );
+
+                    const passed = Object.values(report.results).filter(v => v === true).length;
+                    const total = 4;
+
+                    html += `
+                        <div class="report-card">
+                            <div class="report-header">
+                                <span class="report-filename">${report.filename}</span>
+                                <span class="report-score ${passed === total ? 'pass' : 'partial'}">${passed}/${total}</span>
+                            </div>
+                            <div class="report-timestamp">${timestamp.toLocaleString()}</div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+
+                reportsList.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading reports:', error);
+            }
+        }
+
+        // Load reports on page load
+        loadReports();
+    </script>
+</body>
+</html>
