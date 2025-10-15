@@ -16,7 +16,7 @@
     "build": "tsup src/index.ts --format cjs,esm --dts --external react --clean",
     "dev": "tsup src/index.ts --format cjs,esm --dts --external react --watch",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "clean": "rm -rf dist .turbo node_modules"
   },
   "peerDependencies": {

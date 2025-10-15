@@ -5,6 +5,7 @@
   "scripts": {
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
+    "test": "echo \"No tests yet\"",
     "clean": "rm -rf storybook-static .turbo node_modules"
   },
   "dependencies": {

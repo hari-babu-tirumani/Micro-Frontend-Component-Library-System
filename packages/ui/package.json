@@ -19,7 +19,7 @@
     "build:css": "cp src/styles/global.css dist/styles.css",
     "dev": "tsup src/index.ts --format cjs,esm --dts --external react --watch",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "clean": "rm -rf dist .turbo node_modules"
   },
   "peerDependencies": {
