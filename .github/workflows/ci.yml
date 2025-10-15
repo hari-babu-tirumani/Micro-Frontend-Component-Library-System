@@ -150,18 +150,31 @@ jobs:
     runs-on: ubuntu-latest
     needs: docker-build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    continue-on-error: true
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Check for Kubernetes config
+        id: check-kube
+        run: |
+          if [ -z "${{ secrets.KUBE_CONFIG }}" ]; then
+            echo "KUBE_CONFIG secret not set, skipping Kubernetes deployment"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Configure kubectl
+        if: steps.check-kube.outputs.skip != 'true'
         uses: azure/k8s-set-context@v3
         with:
           method: kubeconfig
           kubeconfig: ${{ secrets.KUBE_CONFIG }}
 
       - name: Deploy to Kubernetes
+        if: steps.check-kube.outputs.skip != 'true'
         run: |
           kubectl apply -f k8s/dashboard-deployment.yaml
           kubectl apply -f k8s/settings-deployment.yaml
