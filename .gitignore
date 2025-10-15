@@ -1,51 +1,36 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
+# Dependencies
+node_modules
+.pnp
+.pnp.js
 
-# Flask
-instance/
-.webassets-cache
+# Testing
+coverage
 
-# Environment
-.env
-.venv
+# Production
+dist
+build
+.next
+storybook-static
+
+# Misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.turbo
 
 # IDE
-.vscode/
-.idea/
+.vscode
+.idea
 *.swp
 *.swo
 *~
 
-# Application specific
-uploads/*
-!uploads/.gitkeep
-reports/*
-!reports/.gitkeep
-static/screenshots/*
-!static/screenshots/.gitkeep
-
 # OS
-.DS_Store
 Thumbs.db
