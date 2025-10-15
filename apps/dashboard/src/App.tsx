@@ -97,7 +97,7 @@ function App() {
             <div className="page-header">
               <h2>Dashboard Overview</h2>
               <p className="page-description">
-                Welcome to your dashboard. Here's what's happening with your application.
+                Welcome to your dashboard. Here&apos;s what&apos;s happening with your application.
               </p>
             </div>
 

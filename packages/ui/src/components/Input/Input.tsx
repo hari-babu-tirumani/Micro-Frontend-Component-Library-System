@@ -34,7 +34,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     },
     ref
   ) => {
-    const inputId = id || `input-${React.useId()}`;
+    const generatedId = React.useId();
+    const inputId = id || `input-${generatedId}`;
     const helperTextId = `${inputId}-helper`;
     const errorId = `${inputId}-error`;
     const hasError = Boolean(error);
